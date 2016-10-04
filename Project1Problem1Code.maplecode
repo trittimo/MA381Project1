@@ -1,0 +1,60 @@
+restart;
+with(Statistics):
+with(plots):
+with(ListTools):
+
+# Define our probability mass function for each possible value of a spin
+S:=[seq(i/(i*20),i=1..20)]:
+
+# Define the random variable for a spin
+X:=RandomVariable(ProbabilityTable(S)):
+
+# Create a list which will contain our probability of winning for each 'Q' value.
+PWin:=[]:
+
+# And the number of trials we want to run for each Q value
+trials:=10000:
+
+# Begin our outer trials loop
+for Q from 1 to 19 do
+ # Initialize our wins counter
+ W:=0:
+
+ # Start inner trial loop
+ for k from 1 to trials do
+  # Get the actual value we spin to
+  SpinValueP1:=Sample(X,1)[1]:
+
+  # Spin again if our value is less than Q
+  if SpinValueP1<Q then
+   SpinValueP1:=SpinValueP1+Sample(X,1)[1]
+  end if:
+  
+  # If our spin sum was > 20, player one lost. Continue to next trial.
+  if SpinValueP1>20 then
+   next
+  end if:
+
+  # Otherwise, get player two's spin value
+  SpinValueP2:=Sample(X,1)[1]:
+
+  # Spin again if SpinValueP2 less than SpinValueP1
+  if SpinValueP2<SpinValueP1 then
+   SpinValueP2:=SpinValueP2+Sample(X,1)[1]
+  end if:
+
+  # Player 1 wins if SVP1>SVP2 | SVP2>20
+  if SpinValueP1>SpinValueP2 or SpinValueP2>20 then
+   W:=W+1
+  end if:
+
+ end do:
+
+ # Insert the number of wins into PWin
+ PWin:=[op(PWin),W]:
+end do:
+
+# Now graph the percentage of wins for each q value
+pointplot({seq([q,PWin[q]/trials],q=1..19)},title="Figure 1", titlefont=["ROMAN",14],labels=["Q Value", "Probability of Win"],axesfont=["ROMAN",12],size=[450,350],labeldirections=["horizontal","vertical"]);
+
+printf("According to the model, the best Q value is %d with a win percentage of %f\n", Search(max(PWin),PWin), evalf(max(PWin)/trials)*100):

@@ -1,0 +1,84 @@
+restart;
+with(Statistics):
+with(plots):
+with(ListTools):
+
+# Define our probability mass function for each possible value of a spin
+S:=[seq(i/(i*20),i=1..20)]:
+
+# Define the random variable for a spin
+X:=RandomVariable(ProbabilityTable(S)):
+
+# Create a list which will contain our probability of winning for each 'Q' value.
+PWin:=[]:
+
+# And the number of trials we want to run for each Q value
+trials:=25000:
+
+# Begin our outer trials loop
+for Q from 1 to 19 do
+ # Initialize our wins counter
+ W:=0:
+
+ # Start inner trial loop
+ for k from 1 to trials do
+  # Get the actual value we spin to
+  SpinValueP1:=Sample(X,1)[1]:
+
+  # Spin again if our value is less than Q
+  if SpinValueP1<Q then
+   SpinValueP1:=SpinValueP1+Sample(X,1)[1]
+  end if:
+  
+  # If our spin sum was > 20, player one lost. Continue to next trial.
+  if SpinValueP1>20 then
+   next
+  end if:
+
+  # Otherwise, get player two's spin value
+  SpinValueP2:=Sample(X,1)[1]:
+
+  # Spin again if SV2<SV1 | SV2 < 11
+  if SpinValueP2<SpinValueP1 or SpinValueP2<11 then
+   SpinValueP2:=SpinValueP2+Sample(X,1)[1]
+  end if:
+
+  # If SV2>20, set their score to -1 to discount them
+  if SpinValueP2>20 then
+   SpinValueP2:=-1
+  end if:
+
+  # Now get player three's spin value
+  SpinValueP3:=Sample(X,1)[1]:
+
+  # Get the largest value between p1 & p2
+  LargestSoFar:=max([SpinValueP1,SpinValueP2]):
+  
+  # P3 spins again if SV3<LargestSoFar
+  if SpinValueP3<LargestSoFar then
+   SpinValueP3:=SpinValueP3+Sample(X,1)[1]
+  end if:
+
+  # Discount P3 if they had a spin sum > 20
+  if SpinValueP3>20 then
+   SpinValueP3:=-1
+  end if:
+
+  # Get the largest between p2 & p3
+  BetterScore:=max([SpinValueP2,SpinValueP3]):
+
+  # Player 1 wins if SVP1>BetterScore
+  if SpinValueP1>BetterScore then
+   W:=W+1
+  end if:
+
+ end do:
+
+ # Insert the number of wins into PWin
+ PWin:=[op(PWin),W]:
+end do:
+
+# Now graph the percentage of wins for each q value
+pointplot({seq([q,PWin[q]/trials],q=1..19)},title="Figure 2", titlefont=["ROMAN",14],labels=["Q Value", "Probability of Win"],axesfont=["ROMAN",12],size=[450,350],labeldirections=["horizontal","vertical"]);
+
+printf("According to the model, the best Q value is %d with a win percentage of %f\n", Search(max(PWin),PWin), evalf(max(PWin)/trials)*100):
